@@ -1,0 +1,25 @@
+{
+  "hosting": [
+    {
+      "target": "staging",
+      "public": "apps/web/dist/web/browser",
+      "ignore": ["firebase.json", "**/.*"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
+      "headers": [
+        { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+        { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+      ]
+    },
+    {
+      "target": "production",
+      "public": "apps/web/dist/web/browser",
+      "ignore": ["firebase.json", "**/.*"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
+      "headers": [
+        { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+        { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+      ]
+    }
+  ],
+  "database": { "rules": "database.rules.json" }
+}

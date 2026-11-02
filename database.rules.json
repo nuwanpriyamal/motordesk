@@ -1,0 +1,12 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "tenants": {
+      "$tenantId": {
+        ".read": "auth != null && auth.token.tenantId === $tenantId",
+        "events": { ".indexOn": ["at"] }
+      }
+    }
+  }
+}
