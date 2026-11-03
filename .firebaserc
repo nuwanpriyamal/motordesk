@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "motordesk-9be23"
+  },
+  "targets": {
+    "motordesk-9be23": {
+      "hosting": {
+        "staging": [
+          "motordesk-staging"
+        ],
+        "production": [
+          "motordesk-9be23"
+        ]
+      }
+    }
+  }
+}
