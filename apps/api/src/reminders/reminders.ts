@@ -1,4 +1,16 @@
-import { BadRequestException, Controller, HttpCode, Injectable, Logger, Module, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Injectable,
+  Logger,
+  Module,
+  Param,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel, MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApiTags, PartialType } from '@nestjs/swagger';
@@ -6,7 +18,7 @@ import { IsDateString, IsIn, IsMongoId, IsOptional, IsString } from 'class-valid
 import { Model, SchemaTypes, Types } from 'mongoose';
 import { Feature, InvoiceStatus, InvoiceType } from '../common/constants';
 import { CrudController } from '../common/crud.controller';
-import { RequireFeature, TenantId } from '../common/decorators';
+import { Public, RequireFeature, TenantId } from '../common/decorators';
 import { TenantCrudService } from '../common/tenant-crud.service';
 import { Customer, CustomersModule } from '../customers/customers';
 import { Invoice, InvoicesModule } from '../invoices/invoices';
@@ -232,6 +244,21 @@ export class RemindersController extends CrudController<Reminder>(CreateReminder
   }
 }
 
+/** Vercel Cron entry point; Vercel sends "Authorization: Bearer $CRON_SECRET". */
+@Public()
+@Controller('cron')
+export class RemindersCronController {
+  constructor(private readonly service: RemindersService) {}
+
+  @Get('reminders')
+  async run(@Headers('authorization') auth?: string) {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || auth !== `Bearer ${secret}`) throw new UnauthorizedException();
+    await this.service.daily();
+    return { ok: true };
+  }
+}
+
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Reminder.name, schema: ReminderSchema }]),
@@ -239,7 +266,7 @@ export class RemindersController extends CrudController<Reminder>(CreateReminder
     VehiclesModule,
     InvoicesModule,
   ],
-  controllers: [RemindersController],
+  controllers: [RemindersController, RemindersCronController],
   providers: [RemindersService, NotifierService],
   exports: [NotifierService],
 })

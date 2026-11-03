@@ -41,7 +41,8 @@ class HealthController {
       useFactory: (config: ConfigService) => ({ uri: config.getOrThrow<string>('MONGODB_URI') }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 300 }]),
-    ScheduleModule.forRoot(),
+    // Serverless functions are not always running; Vercel Cron calls /api/cron/reminders instead.
+    ...(process.env.VERCEL ? [] : [ScheduleModule.forRoot()]),
     CacheModule,
     RealtimeModule,
     CountersModule,

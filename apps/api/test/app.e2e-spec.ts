@@ -14,7 +14,13 @@ describe('MotorDesk API (e2e)', () => {
   beforeAll(async () => {
     mongo = await MongoMemoryServer.create();
     process.env.MONGODB_URI = mongo.getUri('e2e');
+    // Pin everything the test relies on so a developer's local .env cannot leak in.
     process.env.JWT_SECRET = 'e2e-secret';
+    process.env.APP_ENV = 'development';
+    process.env.SUPER_ADMIN_EMAIL = 'admin@motordesk.local';
+    process.env.SUPER_ADMIN_PASSWORD = 'ChangeMe123!';
+    delete process.env.REDIS_URL;
+    delete process.env.FIREBASE_SERVICE_ACCOUNT;
     const { AppModule } = await import('../src/app.module');
     const { seed } = await import('../src/seed/seed');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();

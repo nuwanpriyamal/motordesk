@@ -13,6 +13,8 @@ interface RealtimeConfig {
   enabled: boolean;
   token: string | null;
   tenantId: string;
+  /** False on serverless hosts, where only Firebase can push events. */
+  sse?: boolean;
   web: Record<string, string> | null;
 }
 
@@ -36,7 +38,10 @@ export class RealtimeService {
   connect() {
     if (this.stop) return;
     this.api.get<RealtimeConfig>('/realtime/config').subscribe({
-      next: (cfg) => (cfg.enabled && cfg.web && cfg.token ? this.connectFirebase(cfg) : this.connectSse()),
+      next: (cfg) => {
+        if (cfg.enabled && cfg.web && cfg.token) this.connectFirebase(cfg);
+        else if (cfg.sse !== false) this.connectSse();
+      },
       error: () => this.connectSse(),
     });
   }

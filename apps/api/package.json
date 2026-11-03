@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "dev": "nest start --watch --entryFile dev",
     "seed": "node dist/seed/seed.js",
-    "seed:demo": "node dist/seed/seed.js --demo"
+    "seed:demo": "node dist/seed/seed.js --demo",
+    "vercel-build": "nest build && mkdir -p public && echo ok > public/index.html"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -36,6 +37,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
     "dotenv": "^18.0.9",
+    "express": "^4.22.1",
     "firebase-admin": "^12.7.0",
     "ioredis": "^6.0.0",
     "mongoose": "^8.24.7",

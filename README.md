@@ -83,13 +83,13 @@ The e2e suite covers:
 
 | Env | Branch | Web | API |
 | --- | --- | --- | --- |
-| Testing (staging) | `staging` | Firebase Hosting, target `staging` | Render free web service (`render.yaml`) |
-| Release (production) | `main` | Firebase Hosting, target `production` | Render, created when going live |
+| Testing (staging) | `staging` | Firebase Hosting, target `staging` | Vercel Hobby serverless (`apps/api/vercel.json`) |
+| Release (production) | `main` | Firebase Hosting, target `production` | Vercel, created when going live |
 
 Free services used:
 - MongoDB Atlas M0
 - Firebase Hosting and Realtime Database on the Spark plan
-- Render free web service. It sleeps after 15 minutes idle, and the first request after that takes about 30 seconds.
+- Vercel Hobby for the API, which needs no card. It runs as a serverless function, so the first request after an idle spell takes a few seconds. Live updates use Firebase there, because the SSE fallback needs a long-running server. The daily reminder scan runs as a Vercel Cron job that calls `/api/cron/reminders`, authorised with `CRON_SECRET`.
 - Upstash Redis free tier (optional)
 
 The API URL for each environment is set in `apps/web/src/environments/environment.<env>.ts`.
