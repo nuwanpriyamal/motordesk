@@ -83,7 +83,7 @@ The e2e suite covers:
 
 | Env | Branch | Web | API |
 | --- | --- | --- | --- |
-| Testing (staging) | `staging` | Firebase Hosting, target `staging` | Vercel Hobby serverless (`apps/api/vercel.json`) |
+| Testing (staging) | `staging` | Firebase Hosting, target `staging` | Vercel Hobby serverless (`apps/api/vercel.json`), https://motordesk-red.vercel.app |
 | Release (production) | `main` | Firebase Hosting, target `production` | Vercel, created when going live |
 
 Free services used:

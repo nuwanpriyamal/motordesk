@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
   name: 'staging',
-  apiUrl: 'https://motordesk-api-staging.onrender.com/api',
+  apiUrl: 'https://motordesk-red.vercel.app/api',
   appName: 'MotorDesk',
 };
