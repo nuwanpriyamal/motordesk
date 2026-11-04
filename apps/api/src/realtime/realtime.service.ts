@@ -21,6 +21,7 @@ export class RealtimeService implements OnModuleInit {
   private readonly logger = new Logger(RealtimeService.name);
   private readonly events$ = new Subject<RealtimeEvent>();
   private app?: admin.app.App;
+  private readonly pending = new Set<Promise<unknown>>();
 
   constructor(
     private readonly config: ConfigService,
@@ -56,10 +57,23 @@ export class RealtimeService implements OnModuleInit {
     void this.cache.del(`dash:${tenantId}`);
     this.events$.next(event);
     if (!this.app) return;
-    const db = this.app.database();
-    db.ref(`tenants/${tenantId}/events`)
-      .push({ type, payload, at: admin.database.ServerValue.TIMESTAMP })
-      .catch((e) => this.logger.warn(`Firebase publish failed: ${e.message}`));
+    const write = Promise.resolve(
+      this.app
+        .database()
+        .ref(`tenants/${tenantId}/events`)
+        .push({ type, payload, at: admin.database.ServerValue.TIMESTAMP }),
+    )
+      .catch((e) => this.logger.warn(`Firebase publish failed: ${e.message}`))
+      .finally(() => this.pending.delete(write));
+    this.pending.add(write);
+  }
+
+  /**
+   * Waits for outstanding Firebase writes. Serverless hosts freeze the function
+   * once the response is sent, so the flush interceptor calls this first.
+   */
+  async flush() {
+    await Promise.allSettled([...this.pending]);
   }
 
   stream(tenantId: string): Observable<{ data: RealtimeEvent }> {
