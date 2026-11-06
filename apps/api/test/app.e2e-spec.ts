@@ -43,6 +43,41 @@ describe('MotorDesk API (e2e)', () => {
     await api().get('/api/customers').expect(401);
   });
 
+  it('signs in and signs up with Google', async () => {
+    const { RealtimeService } = await import('../src/realtime/realtime.service');
+    const firebase = app.get(RealtimeService);
+    // Firebase is off in tests, so stand in for Google's token check.
+    const verify = jest.spyOn(firebase, 'verifyGoogleIdToken').mockImplementation(async (t: string) =>
+      t === 'tok-owner'
+        ? { email: 'owner@demo.local', name: 'Owner' }
+        : t === 'tok-new'
+          ? { email: 'newgarage@gmail.com', name: 'New Owner' }
+          : null,
+    );
+    try {
+      await api().post('/api/auth/google').send({ idToken: 'forged' }).expect(401);
+
+      const existing = await api().post('/api/auth/google').send({ idToken: 'tok-owner' }).expect(200);
+      expect(existing.body.user.email).toBe('owner@demo.local');
+
+      const missing = await api().post('/api/auth/google').send({ idToken: 'tok-new' }).expect(404);
+      expect(missing.body).toMatchObject({ code: 'NO_ACCOUNT', email: 'newgarage@gmail.com' });
+
+      // The form's email is ignored; the verified Google email wins.
+      const reg = await api()
+        .post('/api/auth/register')
+        .send({ businessName: 'Google Garage', name: 'New Owner', email: 'spoof@x.lk', googleIdToken: 'tok-new' })
+        .expect(201);
+      expect(reg.body.user).toMatchObject({ email: 'newgarage@gmail.com', role: 'owner' });
+      await api().post('/api/auth/google').send({ idToken: 'tok-new' }).expect(200);
+
+      // A password sign-up still needs a password.
+      await api().post('/api/auth/register').send({ businessName: 'No Pass', name: 'Nope', email: 'nopass@x.lk' }).expect(400);
+    } finally {
+      verify.mockRestore();
+    }
+  });
+
   it('lists public plans', async () => {
     const res = await api().get('/api/plans').expect(200);
     expect(res.body.map((p: { code: string }) => p.code)).toEqual(['starter', 'professional', 'enterprise']);

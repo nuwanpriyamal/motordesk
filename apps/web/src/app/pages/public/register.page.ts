@@ -31,15 +31,17 @@ import { PublicHeaderComponent } from './public-header';
           <label class="field">Phone
             <input name="phone" [(ngModel)]="form.phone" autocomplete="tel" />
           </label>
-          <label class="field">Email
-            <input type="email" name="email" [(ngModel)]="form.email" required autocomplete="email" />
+          <label class="field">Email @if (googleIdToken) { <span class="hint">From your Google account</span> }
+            <input type="email" name="email" [(ngModel)]="form.email" required autocomplete="email" [readonly]="!!googleIdToken" />
           </label>
           <label class="field">City
             <input name="city" [(ngModel)]="form.city" />
           </label>
-          <label class="field span-all">Password <span class="hint">At least 8 characters</span>
-            <input type="password" name="password" [(ngModel)]="form.password" required minlength="8" autocomplete="new-password" />
-          </label>
+          @if (!googleIdToken) {
+            <label class="field span-all">Password <span class="hint">At least 8 characters</span>
+              <input type="password" name="password" [(ngModel)]="form.password" required minlength="8" autocomplete="new-password" />
+            </label>
+          }
           <label class="field span-all">Plan
             <select name="planCode" [(ngModel)]="form.planCode">
               @for (p of plans(); track p._id) {
@@ -68,8 +70,16 @@ export class RegisterPage implements OnInit {
   plans = signal<Plan[]>([]);
   busy = signal(false);
   form = { businessName: '', name: '', email: '', phone: '', city: '', password: '', planCode: '' };
+  /** Set when the user arrives from "Continue with Google" without an account. */
+  googleIdToken: string | null = null;
 
   ngOnInit() {
+    const g = history.state as { googleIdToken?: string; email?: string; name?: string } | null;
+    if (g?.googleIdToken) {
+      this.googleIdToken = g.googleIdToken;
+      this.form.email = g.email ?? '';
+      this.form.name = g.name ?? '';
+    }
     const wanted = this.route.snapshot.queryParamMap.get('plan');
     this.api.get<Plan[]>('/plans').subscribe({
       next: (p) => {
@@ -82,14 +92,19 @@ export class RegisterPage implements OnInit {
 
   valid() {
     const f = this.form;
-    return f.businessName.trim().length >= 2 && f.name.trim().length >= 2 && f.email.includes('@') && f.password.length >= 8;
+    return f.businessName.trim().length >= 2 && f.name.trim().length >= 2 && f.email.includes('@') && (!!this.googleIdToken || f.password.length >= 8);
   }
 
   submit() {
     this.busy.set(true);
     const body: Record<string, string> = {};
     for (const [k, v] of Object.entries(this.form)) if (v.trim()) body[k] = v.trim();
-    body['password'] = this.form.password;
+    if (this.googleIdToken) {
+      delete body['password'];
+      body['googleIdToken'] = this.googleIdToken;
+    } else {
+      body['password'] = this.form.password;
+    }
     this.auth.register(body).subscribe({
       next: () => this.router.navigateByUrl('/app'),
       error: (e) => {

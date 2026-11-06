@@ -83,6 +83,27 @@ export class RealtimeService implements OnModuleInit {
     );
   }
 
+  /** Firebase settings the browser needs before login (all public values). */
+  get webConfig(): Record<string, string> | null {
+    if (!this.app) return null;
+    return JSON.parse(this.config.get<string>('FIREBASE_WEB_CONFIG') || 'null');
+  }
+
+  /**
+   * Verifies a Firebase ID token from a Google sign-in in the browser.
+   * Returns null unless it is a Google sign-in with a verified email.
+   */
+  async verifyGoogleIdToken(idToken: string): Promise<{ email: string; name: string } | null> {
+    if (!this.app) return null;
+    try {
+      const t = await this.app.auth().verifyIdToken(idToken);
+      if (t.firebase?.sign_in_provider !== 'google.com' || !t.email || !t.email_verified) return null;
+      return { email: t.email.toLowerCase(), name: (t.name as string) || t.email.split('@')[0] };
+    } catch {
+      return null;
+    }
+  }
+
   /** Custom token so the browser can sign in to Firebase and read only its tenant's node. */
   async createToken(userId: string, tenantId: string): Promise<string | null> {
     if (!this.app) return null;

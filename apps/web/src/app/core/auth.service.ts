@@ -44,6 +44,33 @@ export class AuthService {
     return this.api.post<{ accessToken: string; user: AuthUser }>('/auth/login', { email, password }).pipe(tap((r) => this.store(r)));
   }
 
+  /** Asks the API whether Google sign-in is available, with the Firebase config it needs. */
+  providers() {
+    return this.api.get<{ google: boolean; firebase: Record<string, string> | null }>('/auth/providers');
+  }
+
+  /**
+   * Opens Google's sign-in popup through Firebase and returns the ID token.
+   * The Firebase session is dropped right away; MotorDesk uses its own token.
+   */
+  async googleIdToken(firebase: Record<string, string>): Promise<string> {
+    const [{ initializeApp, getApps }, { getAuth, GoogleAuthProvider, signInWithPopup, signOut }] = await Promise.all([
+      import('firebase/app'),
+      import('firebase/auth'),
+    ]);
+    const auth = getAuth(getApps()[0] ?? initializeApp(firebase));
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const cred = await signInWithPopup(auth, provider);
+    const idToken = await cred.user.getIdToken();
+    await signOut(auth);
+    return idToken;
+  }
+
+  loginWithGoogle(idToken: string) {
+    return this.api.post<{ accessToken: string; user: AuthUser }>('/auth/google', { idToken }).pipe(tap((r) => this.store(r)));
+  }
+
   register(body: Record<string, unknown>) {
     return this.api.post<{ accessToken: string; user: AuthUser }>('/auth/register', body).pipe(tap((r) => this.store(r)));
   }

@@ -23,9 +23,7 @@ export class RealtimeController {
       tenantId: user.tenantId,
       // SSE needs a long-lived process; serverless hosts rely on Firebase only.
       sse: !process.env.VERCEL,
-      web: this.realtime.firebaseEnabled
-        ? JSON.parse(this.config.get<string>('FIREBASE_WEB_CONFIG') || 'null')
-        : null,
+      web: this.realtime.webConfig,
     };
   }
 

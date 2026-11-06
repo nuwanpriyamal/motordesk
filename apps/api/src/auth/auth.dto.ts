@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator';
 
 export class LoginDto {
   @IsEmail() email!: string;
@@ -9,11 +9,18 @@ export class LoginDto {
 export class RegisterDto {
   @IsString() @MinLength(2) businessName!: string;
   @IsString() @MinLength(2) name!: string;
-  @IsEmail() email!: string;
-  @IsString() @MinLength(8) password!: string;
+  /** Ignored when googleIdToken is sent: the Google account's email is used. */
+  @ValidateIf((o: RegisterDto) => !o.googleIdToken) @IsEmail() email!: string;
+  /** Not needed when signing up with Google. */
+  @ValidateIf((o: RegisterDto) => !o.googleIdToken) @IsString() @MinLength(8) password?: string;
+  @IsOptional() @IsString() googleIdToken?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() planCode?: string;
+}
+
+export class GoogleLoginDto {
+  @IsString() idToken!: string;
 }
 
 export class ChangePasswordDto {
